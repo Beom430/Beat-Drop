@@ -11,6 +11,21 @@
 </head>
 <body>
   <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+  <script type="module">
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:24px;font-family:'Baloo 2','Segoe UI',sans-serif;color:#eee;">
+        <h1 style="font-size:2.8rem;font-weight:800;background:linear-gradient(135deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Beat Drop</h1>
+        <p style="color:#555;font-size:0.85rem;">Select your platform</p>
+        <div style="display:flex;gap:16px;">
+          <button id="pc-btn" style="padding:24px 44px;background:#16213e;border:2px solid #48dbfb;border-radius:14px;color:#48dbfb;font-size:1.1rem;font-weight:700;cursor:pointer;">&#128421; PC</button>
+          <a href="/mobile.html" style="padding:24px 44px;background:#16213e;border:2px solid #ff9ff3;border-radius:14px;color:#ff9ff3;text-decoration:none;font-size:1.1rem;font-weight:700;">&#128241; Mobile</a>
+        </div>
+      </div>
+    `;
+    document.getElementById('pc-btn').addEventListener('click', () => {
+      import('/src/main.js');
+    });
+  </script>
 </body>
 </html>
