@@ -63,7 +63,6 @@ function generateBeatmap(bpm, duration, density, lanes = 4, seed = 12345, noHold
       notes.push({ time: beatTime, lane, hold: holdDuration });
     }
   }
-  }
 
   // 중복 제거
   const unique = [];
