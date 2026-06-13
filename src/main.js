@@ -496,7 +496,10 @@ function resumeGame() {
   if (overlay) overlay.remove();
 
   // 음악 재개
-  if (audioElement) audioElement.play().catch(() => {});
+  if (audioElement) {
+    audioElement.playbackRate = getNoteSpeed() / 0.8;
+    audioElement.play().catch(() => {});
+  }
 
   // 게임루프 재시작
   gameLoop();
@@ -525,11 +528,15 @@ function startGame() {
 
   const song = getSelectedSong();
   const baseNotes = song.notes;
-  // 레인만 랜덤 셔플 (타이밍/롱노트 유지)
+  // 음악 배속 비율 (0.8이 기본)
+  const speedRatio = getNoteSpeed() / 0.8;
+  // 레인만 랜덤 셔플 + 배속에 맞게 타이밍 조정
   const lanes = song.lanes;
   notes = baseNotes.map((n) => ({
     ...n,
-    lane: n.hold ? n.lane : Math.floor(Math.random() * lanes), // 롱노트는 레인 유지, 일반은 랜덤
+    time: n.time / speedRatio, // 배속에 맞게 타이밍 조정
+    hold: n.hold ? n.hold / speedRatio : undefined,
+    lane: n.hold ? n.lane : Math.floor(Math.random() * lanes),
     hit: false,
     missed: false,
   }));
@@ -557,6 +564,7 @@ function startGame() {
     audioElement.addEventListener('playing', () => {
       gameStartTime = performance.now() + syncOffset;
     }, { once: true });
+    audioElement.playbackRate = getNoteSpeed() / 0.8; // 0.8배속이 기본, 그 기준으로 비율 조정
     audioElement.play().catch(() => {});
     audioElement.addEventListener('ended', () => {
       if (state === 'playing') {
@@ -586,7 +594,7 @@ function gameLoop() {
   const elapsed = now - gameStartTime - totalPausedTime;
   const song = getSelectedSong();
 
-  if (elapsed > song.duration + 2000) {
+  if (elapsed > (song.duration / (getNoteSpeed() / 0.8)) + 2000) {
     cleared = true;
     state = 'result';
     render();
@@ -746,7 +754,10 @@ function drawGameFrame(elapsed) {
   }
 
   for (const note of notes) {
-    if (note.hit || note.missed) continue;
+    if (note.hit) continue;
+    // 일반 노트는 missed면 스킵, 롱노트는 아직 진행 중이면 보여줌
+    if (note.missed && !note.hold) continue;
+    if (note.missed && note.hold && elapsed > note.time + note.hold) continue;
     const timeDiff = note.time - elapsed;
     const noteY = hitY - (timeDiff / 1000) * h * getNoteSpeed();
 
@@ -895,7 +906,30 @@ function hitLane(lane) {
     }
   }
 
-  if (!closest || closestDiff > JUDGE_MISS) return;
+  if (!closest || closestDiff > JUDGE_MISS) {
+    // 시작점은 놓쳤지만 아직 진행 중인 롱노트가 있으면 중간에라도 잡기
+    let midHold = null;
+    for (const note of notes) {
+      if (note.hit || note.lane !== lane || !note.hold) continue;
+      if (elapsed > note.time && elapsed < note.time + note.hold) {
+        midHold = note;
+        break;
+      }
+    }
+    if (midHold) {
+      midHold.hit = true;
+      midHold.missed = false;
+      holdingLanes[lane] = { ...midHold, lastTick: performance.now() };
+      combo++;
+      if (combo > maxCombo) maxCombo = combo;
+      score += 50;
+      lastJudge = 'GOOD';
+      lastJudgeTimer = 20;
+      judgeCounts.good++;
+      return;
+    }
+    return;
+  }
   closest.hit = true;
 
   // 롱노트면 holding 시작 + 시작점 판정

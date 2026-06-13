@@ -1,3 +1,5 @@
+import { generateInvincibleChart } from './invincible-chart.js';
+
 // 시드 기반 랜덤 (같은 시드 = 같은 패턴)
 function seededRandom(seed) {
   let s = seed;
@@ -7,57 +9,60 @@ function seededRandom(seed) {
   };
 }
 
-// 시드 기반 비트맵 생성 — 같은 곡은 항상 같은 패턴
+// 시드 기반 비트맵 생성 — 비트 그리드에 정확히 맞춤
 function generateBeatmap(bpm, duration, density, lanes = 4, seed = 12345, noHold = false) {
   const rand = seededRandom(seed);
   const notes = [];
   const beatInterval = 60000 / bpm;
   const totalBeats = Math.floor(duration / beatInterval);
 
+  // 비트 그리드: 4분음표(1), 8분음표(0.5), 16분음표(0.25)
+  const gridPositions = [0, 0.25, 0.5, 0.75]; // 16분음표 기준 4개 슬롯
+
   for (let i = 0; i < totalBeats; i++) {
-    const noteTime = i * beatInterval + 3000; // 3초 후부터 노트 시작
+    const beatTime = i * beatInterval + 3000;
+    // 곡 진행에 따른 밀도 변화 (인트로 약하게, 드롭 강하게)
+    const progress = i / totalBeats;
+    let localDensity = density;
+    if (progress < 0.05) localDensity *= 0.3; // 인트로
+    else if (progress < 0.15) localDensity *= 0.6; // 빌드업
+    else if (progress > 0.45 && progress < 0.55) localDensity *= 0.5; // 브릿지
+    else if (progress > 0.75) localDensity *= 1.1; // 클라이맥스
 
-    // 기본 노트
-    if (rand() < density) {
-      const lane = Math.floor(rand() * lanes);
-      notes.push({ time: noteTime, lane });
+    for (let g = 0; g < gridPositions.length; g++) {
+      const gridTime = beatTime + gridPositions[g] * beatInterval;
+
+      // 4분음표 (메인 비트) — 높은 확률
+      if (g === 0 && rand() < localDensity * 1.2) {
+        const lane = Math.floor(rand() * lanes);
+        notes.push({ time: gridTime, lane });
+      }
+      // 8분음표 (반박) — 중간 확률
+      else if (g === 2 && rand() < localDensity * 0.7) {
+        const lane = Math.floor(rand() * lanes);
+        notes.push({ time: gridTime, lane });
+      }
+      // 16분음표 (1/4, 3/4) — 고난도에서만
+      else if ((g === 1 || g === 3) && density >= 0.6 && rand() < (localDensity - 0.4) * 0.5) {
+        const lane = Math.floor(rand() * lanes);
+        notes.push({ time: gridTime, lane });
+      }
     }
 
-    // 동시타 (density 높을수록 자주)
-    if (density >= 0.65 && rand() < (density - 0.55) * 0.3) {
+    // 동시타 (메인 비트에서만, 고난도)
+    if (density >= 0.65 && rand() < (localDensity - 0.55) * 0.25) {
       const lane = Math.floor(rand() * lanes);
-      notes.push({ time: noteTime, lane });
+      notes.push({ time: beatTime, lane });
     }
 
-    // 트리플 노트 (최고 난이도)
-    if (density >= 0.9 && rand() < 0.08) {
+    // 롱노트 (정확히 비트 시작점에서, 비트 단위 길이)
+    if (!noHold && rand() < density * 0.1 && i + 2 < totalBeats) {
       const lane = Math.floor(rand() * lanes);
-      notes.push({ time: noteTime, lane });
-    }
-
-    // 반박 노트 (8분음표)
-    if (density >= 0.6 && rand() < (density - 0.45) * 0.4) {
-      const lane = Math.floor(rand() * lanes);
-      notes.push({ time: noteTime + beatInterval / 2, lane });
-    }
-
-    // 16분음표 연타 (고난도)
-    if (density >= 0.8 && rand() < (density - 0.7) * 0.3) {
-      const lane = Math.floor(rand() * lanes);
-      notes.push({ time: noteTime + beatInterval / 4, lane });
-    }
-    if (density >= 0.9 && rand() < 0.15) {
-      const lane = Math.floor(rand() * lanes);
-      notes.push({ time: noteTime + beatInterval * 3 / 4, lane });
-    }
-
-    // 롱노트 (일정 확률로, 2~4비트 길이)
-    if (!noHold && rand() < density * 0.12 && i + 2 < totalBeats) {
-      const lane = Math.floor(rand() * lanes);
-      const holdBeats = 2 + Math.floor(rand() * 3); // 2~4비트
+      const holdBeats = 2 + Math.floor(rand() * 3);
       const holdDuration = holdBeats * beatInterval;
-      notes.push({ time: noteTime, lane, hold: holdDuration });
+      notes.push({ time: beatTime, lane, hold: holdDuration });
     }
+  }
   }
 
   // 중복 제거
@@ -396,32 +401,11 @@ export const songs = {
       bpm: 100,
       difficulty: '★★★+',
       diffLabel: 'INSANE',
-      duration: 200000,
+      duration: 150000,
       lanes: 4,
       seed: 10040,
       audioSrc: '/music/DEAF KEV - Invincible [NCS Release].mp3',
-      noHold: true,
-      get notes() { 
-        // 연속 노트 폭격 (동시타 없이 레인 교차) - 5등분
-        const rand = seededRandom(10040);
-        const notes = [];
-        const beatInterval = 60000 / 100;
-        const totalBeats = Math.floor(200000 / beatInterval);
-        let prevLane = -1;
-        for (let i = 0; i < totalBeats; i++) {
-          const baseTime = i * beatInterval + 3000;
-          for (let sub = 0; sub < 5; sub++) {
-            const noteTime = baseTime + sub * (beatInterval / 5);
-            if (rand() < 0.65) {
-              let lane = Math.floor(rand() * 4);
-              if (lane === prevLane) lane = (lane + 1 + Math.floor(rand() * 3)) % 4;
-              notes.push({ time: noteTime, lane });
-              prevLane = lane;
-            }
-          }
-        }
-        return notes.sort((a, b) => a.time - b.time);
-      },
+      get notes() { return generateInvincibleChart(4); },
     },
     {
       id: 'mortals-4k',
@@ -747,31 +731,11 @@ export const songs = {
       bpm: 100,
       difficulty: '★★★+',
       diffLabel: 'INSANE',
-      duration: 200000,
+      duration: 150000,
       lanes: 6,
       seed: 10046,
       audioSrc: '/music/DEAF KEV - Invincible [NCS Release].mp3',
-      noHold: true,
-      get notes() {
-        const rand = seededRandom(10046);
-        const notes = [];
-        const beatInterval = 60000 / 100;
-        const totalBeats = Math.floor(200000 / beatInterval);
-        let prevLane = -1;
-        for (let i = 0; i < totalBeats; i++) {
-          const baseTime = i * beatInterval + 3000;
-          for (let sub = 0; sub < 5; sub++) {
-            const noteTime = baseTime + sub * (beatInterval / 5);
-            if (rand() < 0.61) {
-              let lane = Math.floor(rand() * 6);
-              if (lane === prevLane) lane = (lane + 1 + Math.floor(rand() * 5)) % 6;
-              notes.push({ time: noteTime, lane });
-              prevLane = lane;
-            }
-          }
-        }
-        return notes.sort((a, b) => a.time - b.time);
-      },
+      get notes() { return generateInvincibleChart(6); },
     },
     {
       id: 'mortals-6k',
