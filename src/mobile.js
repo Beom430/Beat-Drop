@@ -341,6 +341,26 @@ function drawFrame(elapsed) {
   ctx.fillStyle = '#0a0a1a';
   ctx.fillRect(0, 0, w, h);
 
+  // 배경 이펙트
+  const time = elapsed * 0.001;
+  const colors = getColors();
+  for (let i = 0; i < 4; i++) {
+    const y = ((time * 40 + i * 160) % (h + 100)) - 50;
+    const glow = ctx.createRadialGradient(0, y, 0, 0, y, 50);
+    glow.addColorStop(0, colors[i % colors.length] + '12');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, y - 50, 50, 100);
+  }
+  for (let i = 0; i < 4; i++) {
+    const y = ((time * 35 + i * 180 + 70) % (h + 100)) - 50;
+    const glow = ctx.createRadialGradient(w, y, 0, w, y, 50);
+    glow.addColorStop(0, colors[(i + 2) % colors.length] + '12');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(w - 50, y - 50, 50, 100);
+  }
+
   // 레인 구분
   for (let i = 1; i < lanes; i++) {
     ctx.strokeStyle = '#ffffff08';

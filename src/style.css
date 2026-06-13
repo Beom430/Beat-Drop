@@ -511,6 +511,40 @@ html, body {
   justify-content: center;
   background: #0a0a1a;
   overflow: hidden;
+  animation: bgPulse 4s ease-in-out infinite;
+}
+
+.game-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 0% 30%, rgba(255, 107, 107, 0.15) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 70%, rgba(255, 159, 243, 0.15) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(72, 219, 251, 0.1) 0%, transparent 35%),
+    radial-gradient(ellipse at 80% 20%, rgba(254, 202, 87, 0.1) 0%, transparent 35%);
+  animation: bgShift 6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.game-screen::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    linear-gradient(135deg, rgba(255,107,107,0.03) 0%, transparent 50%),
+    linear-gradient(225deg, rgba(72,219,251,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+@keyframes bgPulse {
+  0%, 100% { background: #0a0a1a; }
+  50% { background: #0e0e26; }
+}
+
+@keyframes bgShift {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.15); opacity: 1; }
 }
 
 .game-screen .deco-text {
@@ -523,11 +557,17 @@ html, body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  opacity: 0.12;
+  opacity: 0.2;
   white-space: nowrap;
   pointer-events: none;
   letter-spacing: 2px;
   text-transform: uppercase;
+  animation: decoGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes decoGlow {
+  0% { opacity: 0.15; filter: blur(0px); }
+  100% { opacity: 0.25; filter: blur(1px); }
 }
 
 .game-screen .deco-text.left {

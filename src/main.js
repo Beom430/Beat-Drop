@@ -497,7 +497,6 @@ function resumeGame() {
 
   // 음악 재개
   if (audioElement) {
-    audioElement.playbackRate = getNoteSpeed() / 0.8;
     audioElement.play().catch(() => {});
   }
 
@@ -528,14 +527,10 @@ function startGame() {
 
   const song = getSelectedSong();
   const baseNotes = song.notes;
-  // 음악 배속 비율 (0.8이 기본)
-  const speedRatio = getNoteSpeed() / 0.8;
-  // 레인만 랜덤 셔플 + 배속에 맞게 타이밍 조정
   const lanes = song.lanes;
+  // 레인만 랜덤 셔플 (타이밍은 원본 유지)
   notes = baseNotes.map((n) => ({
     ...n,
-    time: n.time / speedRatio, // 배속에 맞게 타이밍 조정
-    hold: n.hold ? n.hold / speedRatio : undefined,
     lane: n.hold ? n.lane : Math.floor(Math.random() * lanes),
     hit: false,
     missed: false,
@@ -564,7 +559,7 @@ function startGame() {
     audioElement.addEventListener('playing', () => {
       gameStartTime = performance.now() + syncOffset - 50;
     }, { once: true });
-    audioElement.playbackRate = getNoteSpeed() / 0.8; // 0.8배속이 기본, 그 기준으로 비율 조정
+    audioElement.playbackRate = 1.0; // 음악은 항상 원래 속도
     audioElement.play().catch(() => {});
     audioElement.addEventListener('ended', () => {
       if (state === 'playing') {
@@ -594,7 +589,7 @@ function gameLoop() {
   const elapsed = now - gameStartTime - totalPausedTime;
   const song = getSelectedSong();
 
-  if (elapsed > (song.duration / (getNoteSpeed() / 0.8)) + 2000) {
+  if (elapsed > song.duration + 2000) {
     cleared = true;
     state = 'result';
     render();
@@ -660,6 +655,8 @@ function drawGameFrame(elapsed) {
   const lanes = getCurrentLanes();
   const colors = getCurrentColors();
   const labels = getCurrentLabels();
+  const laneWidth = w / lanes;
+  const hitY = h * HIT_ZONE_Y;
 
   const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
   bgGrad.addColorStop(0, '#06061a');
@@ -667,8 +664,65 @@ function drawGameFrame(elapsed) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, w, h);
 
-  const laneWidth = w / lanes;
-  const hitY = h * HIT_ZONE_Y;
+  // 배경 이펙트
+  const time = elapsed * 0.001;
+  const colors = getCurrentColors();
+  const intensity = Math.min(1, combo / 30); // 콤보 높을수록 화려해짐
+
+  // 좌우 네온 빔 라인
+  for (let i = 0; i < 8; i++) {
+    const y = ((time * 80 + i * 120) % (h + 200)) - 100;
+    const lineColor = colors[i % colors.length];
+    ctx.strokeStyle = lineColor + '55';
+    ctx.lineWidth = 2 + intensity * 3;
+    ctx.shadowColor = lineColor;
+    ctx.shadowBlur = 15 + intensity * 10;
+    ctx.beginPath();
+    ctx.moveTo(-10, y);
+    ctx.lineTo(40 + intensity * 20, y + 30);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(w + 10, y + 60);
+    ctx.lineTo(w - 40 - intensity * 20, y + 90);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+
+  // 좌우 글로우 오브
+  for (let i = 0; i < 6; i++) {
+    const y = ((time * 50 + i * 140) % (h + 100)) - 50;
+    const size = 40 + intensity * 30;
+    const glow = ctx.createRadialGradient(0, y, 0, 0, y, size);
+    glow.addColorStop(0, colors[i % colors.length] + '30');
+    glow.addColorStop(0.5, colors[i % colors.length] + '10');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, y - size, size * 2, size * 2);
+
+    const glow2 = ctx.createRadialGradient(w, y + 70, 0, w, y + 70, size);
+    glow2.addColorStop(0, colors[(i + 2) % colors.length] + '30');
+    glow2.addColorStop(0.5, colors[(i + 2) % colors.length] + '10');
+    glow2.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow2;
+    ctx.fillRect(w - size * 2, y + 70 - size, size * 2, size * 2);
+  }
+
+  // 비트 펄스 (판정선 근처 전체 플래시)
+  const beatPulse = Math.sin(time * Math.PI * (100 / 60)) * 0.5 + 0.5; // BPM 동기화 시도
+  const pulseGrad = ctx.createLinearGradient(0, hitY - 80, 0, hitY + 20);
+  pulseGrad.addColorStop(0, 'transparent');
+  pulseGrad.addColorStop(0.5, `rgba(255, 255, 255, ${0.02 + beatPulse * 0.03 + intensity * 0.03})`);
+  pulseGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = pulseGrad;
+  ctx.fillRect(0, hitY - 80, w, 100);
+
+  // 상단 비네팅
+  const vignette = ctx.createLinearGradient(0, 0, 0, h * 0.15);
+  vignette.addColorStop(0, colors[0] + '08');
+  vignette.addColorStop(1, 'transparent');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, w, h * 0.15);
 
   for (let i = 0; i < lanes; i++) {
     ctx.fillStyle = i % 2 === 0 ? '#ffffff02' : '#ffffff01';
