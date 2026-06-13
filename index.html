@@ -11,26 +11,6 @@
 </head>
 <body>
   <div id="app"></div>
-  <script type="module">
-    // PC/모바일 선택 화면
-    const app = document.getElementById('app');
-    app.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:24px;font-family:'Segoe UI',sans-serif;color:#eee;">
-        <h1 style="font-size:2.5rem;font-weight:800;font-family:'Baloo 2',cursive;background:linear-gradient(135deg,#ff6b6b,#feca57,#48dbfb,#ff9ff3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Beat Drop</h1>
-        <p style="color:#666;font-size:0.9rem;">Select your platform</p>
-        <div style="display:flex;gap:16px;">
-          <a href="/index.html" onclick="event.preventDefault();loadPC();" style="padding:20px 40px;background:#16213e;border:2px solid #48dbfb;border-radius:12px;color:#48dbfb;text-decoration:none;font-size:1.1rem;font-weight:700;">&#128421; PC</a>
-          <a href="/mobile.html" style="padding:20px 40px;background:#16213e;border:2px solid #ff9ff3;border-radius:12px;color:#ff9ff3;text-decoration:none;font-size:1.1rem;font-weight:700;">&#128241; Mobile</a>
-        </div>
-      </div>
-    `;
-    function loadPC() {
-      // PC 모드 로드
-      const s = document.createElement('script');
-      s.type = 'module';
-      s.src = '/src/main.js';
-      document.body.appendChild(s);
-    }
-  </script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

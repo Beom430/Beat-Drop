@@ -167,7 +167,7 @@ function renderMenu() {
           <button id="mute-btn" class="btn-secondary">${menuMuted ? '&#128263;' : '&#128266;'}</button>
         </div>
 
-        <div class="menu-hint">ESC to quit | Mobile: tap bottom</div>
+        <div class="menu-hint">ESC to quit | Mobile: <a href="/mobile.html" style="color:#ff9ff3;text-decoration:underline;">Tap here</a></div>
       </div>
 
       <div class="deco-text left">Beat Drop</div>
