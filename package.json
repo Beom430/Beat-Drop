@@ -1,0 +1,12 @@
+{
+  "name": "beat-drop",
+  "version": "1.0.0",
+  "description": "웹 리듬 게임",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "vite": "^5.1.0"
+  }
+}
