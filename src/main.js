@@ -562,7 +562,7 @@ function startGame() {
     audioElement.volume = 0.7;
     // 음악이 실제로 재생 시작되면 게임 타이머 시작 (싱크 오프셋 보정)
     audioElement.addEventListener('playing', () => {
-      gameStartTime = performance.now() + syncOffset;
+      gameStartTime = performance.now() + syncOffset - 50;
     }, { once: true });
     audioElement.playbackRate = getNoteSpeed() / 0.8; // 0.8배속이 기본, 그 기준으로 비율 조정
     audioElement.play().catch(() => {});

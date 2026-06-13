@@ -3,7 +3,7 @@ import { songs, categories, playHitSound } from './songs.js';
 // --- 설정 ---
 const LANE_COLORS_4 = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3'];
 const LANE_COLORS_6 = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#00ff88', '#ff9f43'];
-const HIT_ZONE_Y = 0.88;
+const HIT_ZONE_Y = 0.72;
 const NOTE_SPEED = 0.7;
 const JUDGE_PERFECT = 60;
 const JUDGE_GREAT = 120;
@@ -222,7 +222,7 @@ function startGame() {
     audioElement = new Audio(song.audioSrc);
     audioElement.volume = 0.8;
     audioElement.addEventListener('playing', () => {
-      gameStartTime = performance.now() + syncOffset;
+      gameStartTime = performance.now() + syncOffset - 80;
     }, { once: true });
     audioElement.play().catch(() => {});
     audioElement.addEventListener('ended', () => {
